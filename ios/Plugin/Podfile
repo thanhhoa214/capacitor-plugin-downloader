@@ -1,0 +1,15 @@
+# Uncomment the next line to define a global platform for your project
+platform :ios, '10.0'
+
+target 'Plugin' do
+  use_frameworks!
+  # Pods for IonicRunner
+  pod 'Capacitor'
+  pod 'Alamofire', '~> 4.7'
+end
+
+target 'PluginTests' do
+  use_frameworks!
+  pod 'Capacitor'
+  pod 'Alamofire', '~> 4.7'
+end
