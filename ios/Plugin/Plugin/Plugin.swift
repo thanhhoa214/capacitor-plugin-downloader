@@ -28,15 +28,15 @@ public class DownloaderPlugin: CAPPlugin {
     static var downloadsData:[String:[String:Any]] = [:]
     
     @objc func initialize(){
-        Alamofire.SessionManager.default.startRequestsImmediately = false;
-        Alamofire.SessionManager.default.session.configuration.timeoutIntervalForRequest = 60
-        Alamofire.SessionManager.default.session.configuration.timeoutIntervalForResource = 60
+//        Alamofire.Session.default.startRequestsImmediately = false
+        Alamofire.Session.default.session.configuration.timeoutIntervalForRequest = 60
+        Alamofire.Session.default.session.configuration.timeoutIntervalForResource = 60
     }
     
     @objc static func setTimeout(_ call: CAPPluginCall){
         let timeout = call.getInt("timeout") ?? 60
-        Alamofire.SessionManager.default.session.configuration.timeoutIntervalForRequest = Double(timeout)
-        Alamofire.SessionManager.default.session.configuration.timeoutIntervalForResource = Double(timeout)
+        Alamofire.Session.default.session.configuration.timeoutIntervalForRequest = Double(timeout)
+        Alamofire.Session.default.session.configuration.timeoutIntervalForResource = Double(timeout)
         call.resolve()
     }
     
@@ -61,16 +61,16 @@ public class DownloaderPlugin: CAPPlugin {
         let query = call.getString("query") ?? nil
         let headers = call.getObject("headers") ?? nil
         let path = call.getString("path") ?? nil
-        let fileName = call.getString("fileName") ?? nil
+        let fileName = (call.getString("fileName") ?? nil) ?? ""
         
-        let destination: DownloadRequest.DownloadFileDestination = { _, _ in
+        let destination: DownloadRequest.Destination = { _, _ in
             let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: FileManager.SearchPathDomainMask.userDomainMask).first
             return (documentsUrl?.appendingPathComponent(fileName), [.removePreviousFile, .createIntermediateDirectories])
         }
         
         let id = self.generateId()
         
-        let download = Alamofire.download(url!, to: destination)
+        let download = Alamofire.Session.default.download(url!, to: destination)
         var task:DownloadRequest?
         var lastRefreshTime = Int64(0);
         var lastBytesWritten =  Int64(0);
@@ -151,6 +151,7 @@ public class DownloaderPlugin: CAPPlugin {
         let task = DownloaderPlugin.downloads[id ?? ""]
         
         task?.resume()
+        call.resolve()
     }
     @objc func pause(_ call: CAPPluginCall){
         let id = call.getString("id") ?? nil
