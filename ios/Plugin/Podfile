@@ -11,10 +11,10 @@ end
 target 'Plugin' do
   capacitor_pods
   # Pods for IonicRunner
-  pod 'Alamofire', '~> 4.7'
+  pod 'Alamofire'
 end
 
 target 'PluginTests' do
   capacitor_pods
-  pod 'Alamofire', '~> 4.7'
+  pod 'Alamofire'
 end

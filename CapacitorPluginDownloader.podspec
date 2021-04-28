@@ -13,5 +13,5 @@ Pod::Spec.new do |s|
   s.source_files = 'ios/Plugin/Plugin/*.{swift,h,m,c,cc,mm,cpp}' ,'ios/Plugin/Plugin/**/*.{swift,h,m,c,cc,mm,cpp}'
   s.ios.deployment_target  = '11.0'
   s.dependency 'Capacitor'
-  s.dependency 'Alamofire', '~> 4.7'
+  s.dependency 'Alamofire'
 end

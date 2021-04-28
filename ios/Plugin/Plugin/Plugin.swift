@@ -65,7 +65,8 @@ public class DownloaderPlugin: CAPPlugin {
         
         let destination: DownloadRequest.Destination = { _, _ in
             let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: FileManager.SearchPathDomainMask.userDomainMask).first
-            return (documentsUrl?.appendingPathComponent(fileName), [.removePreviousFile, .createIntermediateDirectories])
+            let fileUrl: URL! = documentsUrl?.appendingPathComponent(fileName)
+            return (fileUrl, [.removePreviousFile, .createIntermediateDirectories])
         }
         
         let id = self.generateId()
@@ -117,7 +118,7 @@ public class DownloaderPlugin: CAPPlugin {
                     let _call = self.bridge.getSavedCall(callId)
                     var data = JSObject()
                     data["status"] = StatusCode.COMPLETED.rawValue
-                    data["path"] = CAPFileManager.getPortablePath(host: self.bridge.getLocalUrl(), uri: response.destinationURL)
+                    data["path"] = response.fileURL?.absoluteString
                     _call?.success(data)
                     break;
                 case .failure(let error):
