@@ -1,6 +1,6 @@
 {
   "name": "capacitor-plugin-downloader",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "Capacitor plugin for downloader in native apps (Android/iOS). Clone from https://github.com/triniwiz/capacitor-downloader because of without maintainance.",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
