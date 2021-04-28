@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>capacitor-downloader</name>
-	<comment>Project capacitor-downloader created by Buildship.</comment>
+	<name>capacitor-plugin-downloader</name>
+	<comment>Project capacitor-plugin-downloader created by Buildship.</comment>
 	<projects>
 	</projects>
 	<buildSpec>
