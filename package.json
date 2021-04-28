@@ -1,7 +1,7 @@
 {
   "name": "capacitor-plugin-downloader",
-  "version": "2.1.0",
-  "description": "",
+  "version": "2.1.1",
+  "description": "Capacitor plugin for downloader in native apps (Android/iOS). Clone from https://github.com/triniwiz/capacitor-downloader because of without maintainance.",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
@@ -13,7 +13,9 @@
   "author": "Osei Fortune",
   "license": "MIT",
   "dependencies": {
-    "@capacitor/core": "latest"
+    "@capacitor/android": "^2.4.7",
+    "@capacitor/core": "latest",
+    "@capacitor/ios": "^2.4.7"
   },
   "devDependencies": {
     "typescript": "^2.6.2"

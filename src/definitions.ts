@@ -6,17 +6,20 @@ declare global {
 
 export interface IDownloader {
   initialize(): void;
-  createDownload(options: DownloadOptions): Promise<any>;
-  start(options: Options, progress?: Function): Promise<any>;
-  pause(options: Options): Promise<any>;
-  resume(options: Options): Promise<any>;
-  cancel(options:Options): Promise<any>;
+  createDownload(options: DownloadOptions): Promise<CreateDownloadResponse>;
+  start(
+    options: Options,
+    progress?: (event: ProgressEventData) => void
+  ): Promise<DownloadEventData>;
+  pause(options: Options): Promise<void>;
+  resume(options: Options): Promise<void>;
+  cancel(options: Options): Promise<void>;
   getPath(options: Options): Promise<string>;
   getStatus(options: Options): Promise<IStatusCode>;
 }
 
-export interface  TimeOutOptions {
-    timeout: number;
+export interface TimeOutOptions {
+  timeout: number;
 }
 
 export interface Options {
@@ -54,7 +57,7 @@ export enum StatusCode {
   PAUSED = 'paused',
   DOWNLOADING = 'downloading',
   COMPLETED = 'completed',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 export interface DownloadOptions {
@@ -63,4 +66,8 @@ export interface DownloadOptions {
   headers?: Object;
   path?: string;
   fileName?: string;
+}
+
+export interface CreateDownloadResponse {
+  value: string; // id
 }
