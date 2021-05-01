@@ -5,7 +5,7 @@
 CAP_PLUGIN(DownloaderPlugin, "DownloaderPlugin",
            CAP_PLUGIN_METHOD(initialize, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(createDownload, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(start, CAPPluginReturnCallback);
+           CAP_PLUGIN_METHOD(start, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(pause, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(resume, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(cancel, CAPPluginReturnPromise);

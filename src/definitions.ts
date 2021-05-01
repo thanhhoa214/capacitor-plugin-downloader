@@ -1,3 +1,5 @@
+import { PluginListenerHandle } from '@capacitor/core';
+
 declare global {
   interface PluginRegistry {
     DownloaderPlugin?: IDownloader;
@@ -7,15 +9,16 @@ declare global {
 export interface IDownloader {
   initialize(): void;
   createDownload(options: DownloadOptions): Promise<CreateDownloadResponse>;
-  start(
-    options: Options,
-    progress?: (event: ProgressEventData) => void
-  ): Promise<DownloadEventData>;
+  start(options: Options): Promise<DownloadEventData>;
   pause(options: Options): Promise<void>;
   resume(options: Options): Promise<void>;
   cancel(options: Options): Promise<void>;
   getPath(options: Options): Promise<string>;
   getStatus(options: Options): Promise<IStatusCode>;
+  addListener(
+    event: 'progressUpdate',
+    callback: (event: ProgressEventData) => void
+  ): PluginListenerHandle;
 }
 
 export interface TimeOutOptions {
@@ -33,12 +36,12 @@ export interface StartCallback {
 }
 
 export interface DownloadEventError {
-  status: string;
+  status: StatusCode;
   message: string;
 }
 
 export interface DownloadEventData {
-  status: string;
+  status: StatusCode;
   path: string;
   message?: string;
 }

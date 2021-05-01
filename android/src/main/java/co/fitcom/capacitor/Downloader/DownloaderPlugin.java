@@ -1,8 +1,9 @@
 package co.fitcom.capacitor.Downloader;
 
-import android.net.Uri;
+import android.content.Context;
+import android.os.AsyncTask;
+import android.os.PowerManager;
 
-import com.getcapacitor.FileUtils;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.NativePlugin;
 import com.getcapacitor.Plugin;
@@ -10,245 +11,183 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-import co.fitcom.fancydownloader.DownloadListenerUI;
-import co.fitcom.fancydownloader.Manager;
-import co.fitcom.fancydownloader.Request;
-
-
-enum StatusCode {
-    PENDING {
-        @Override
-        public String toString() {
-            return "pending";
-        }
-    },
-    PAUSED {
-        @Override
-        public String toString() {
-            return "paused";
-        }
-    },
-    DOWNLOADING {
-        @Override
-        public String toString() {
-            return "downloading";
-        }
-    },
-    COMPLETED {
-        @Override
-        public String toString() {
-            return "completed";
-        }
-    },
-    ERROR {
-        @Override
-        public String toString() {
-            return "error";
-        }
-    },
-}
-
-class DownloadData {
-    private String status = null;
-    private String path = null;
-    private PluginCall call = null;
-
-    String getStatus() {
-        return status;
-    }
-
-    void setStatus(String status) {
-        this.status = status;
-    }
-
-    PluginCall getCallback() {
-        return call;
-    }
-
-    void setCallback(PluginCall call) {
-        this.call = call;
-    }
-
-    String getPath() {
-        return path;
-    }
-
-    void setPath(String path) {
-        this.path = path;
-    }
-}
 
 
 @NativePlugin()
 public class DownloaderPlugin extends Plugin {
-    private Map<String, DownloadData> downloadsData;
-    private Map<String, Request> downloadsRequest;
-    private static int timeout = 60;
-    class Listener extends DownloadListenerUI {
+    HashMap<String, DownloadData> downloadDataHashMap = new HashMap<>();
 
-        @Override
-        public void onUIProgress(String task, long currentBytes, long totalBytes, long speed) {
-            DownloadData data = downloadsData.get(task);
-            if (data != null) {
-                JSObject object = new JSObject();
-                object.put("value", (currentBytes * 100 / totalBytes));
-                object.put("speed", speed);
-                object.put("currentSize", currentBytes);
-                object.put("totalSize", totalBytes);
-                data.getCallback().success(object);
-            }
-
-        }
-
-        @Override
-        public void onUIComplete(String task) {
-            DownloadData data = downloadsData.get(task);
-            Request request = downloadsRequest.get(task);
-            if (data != null) {
-                JSObject object = new JSObject();
-                object.put("status", StatusCode.COMPLETED);
-                String path = FileUtils.getPortablePath(getContext(), bridge.getLocalUrl(), Uri.fromFile(new File(request.getFilePath(), request.getFileName())));
-                object.put("path", path);
-                data.getCallback().success(object);
-                downloadsData.remove(task);
-                downloadsRequest.remove(task);
-            }
-
-        }
-
-        @Override
-        public void onUIError(String task, Exception e) {
-            DownloadData data = downloadsData.get(task);
-            if (data != null) {
-                data.getCallback().reject(e.getLocalizedMessage());
-            }
-
-        }
-    }
-
-    @Override
-    public void load() {
-        super.load();
-        Manager.init(this.getContext());
-        if (downloadsData == null) {
-            downloadsData = new HashMap<>();
-        }
-        if (downloadsRequest == null) {
-            downloadsRequest = new HashMap<>();
-        }
-    }
-
-    @PluginMethod()
-    public static void setTimeout(PluginCall call){
-        timeout = call.getInt("timeout",60);
-        call.resolve();
-    }
-
-    @PluginMethod()
-    public void initialize(PluginCall call) {
-        Manager.init(this.getContext());
-    }
-
-    @PluginMethod()
+    @PluginMethod
     public void createDownload(PluginCall call) {
-        Manager manager = Manager.getInstance();
-        String url = call.getString("url");
-        String query = call.getString("query");
-        JSObject headers = call.getObject("headers");
-        String path = call.getString("path");
-        String fileName = call.getString("fileName");
-        Request request = new Request(url);
-        request.setTimeout(timeout);
-        DownloadData data = new DownloadData();
-        if (query != null) {
-            // TODO
-        }
+        String url = call.getString("url", "");
+        String fileName = call.getString("fileName", "");
 
-        if (headers != null) {
-            HashMap<String, String> map = new HashMap<String, String>();
-            int len = headers.length();
-            Iterator<String> keys = headers.keys();
-            for (int i = 0; i < len; i++) {
-                String key = keys.next();
-                map.put(key, headers.getString(key));
-            }
-            request.setHeaders(map);
-        }
-
-        if (path != null) {
-            request.setFilePath(path);
-            data.setPath(path);
-        }
-
-        if (fileName != null) {
-            request.setFileName(fileName);
-        }
-        String id = manager.create(request);
-        downloadsRequest.put(id, request);
+        final DownloadTask downloadTask = new DownloadTask(this.getContext(), fileName);
+        String currentTimestamp = System.nanoTime() + "";
+        this.downloadDataHashMap.put(currentTimestamp, new DownloadData(url, downloadTask));
         JSObject object = new JSObject();
-        object.put("value", id);
-        downloadsData.put(id, data);
+        object.put("value", currentTimestamp);
         call.resolve(object);
     }
 
-    @PluginMethod(returnType = PluginMethod.RETURN_CALLBACK)
+    @PluginMethod
     public void start(PluginCall call) {
-        String id = call.getString("id");
-        Manager manager = Manager.getInstance();
-        DownloadData data = downloadsData.get(id);
-        Request request = downloadsRequest.get(id);
-        call.save();
-        data.setCallback(call);
-        if (request != null) {
-            request.setListener(new Listener());
+        String id = call.getString("id", "");
+        if (id != null && id.length() != 0) {
+            DownloadData downloadData = this.downloadDataHashMap.get(id);
+            downloadData.getTask().setCall(call);
+            downloadData.getTask().execute(downloadData.getUrl());
         }
-        manager.start(id);
     }
 
-    @PluginMethod()
-    public void pause(PluginCall call) {
-        String id = call.getString("id");
-        Manager manager = Manager.getInstance();
-        manager.pause(id);
-    }
 
-    @PluginMethod()
-    public void resume(PluginCall call) {
-        String id = call.getString("id");
-        Manager manager = Manager.getInstance();
-        manager.resume(id);
-    }
+    class DownloadData {
+        private String url;
+        private DownloadTask task;
 
-    @PluginMethod()
-    public void cancel(PluginCall call) {
-        String id = call.getString("id");
-        Manager manager = Manager.getInstance();
-        manager.cancel(id);
-    }
-
-    @PluginMethod()
-    public void getPath(PluginCall call) {
-        String id = call.getString("id");
-        DownloadData data = downloadsData.get(id);
-        JSObject jsObject = new JSObject();
-        if (data != null) {
-            jsObject.put("value", data.getPath());
+        public DownloadData(String url, DownloadTask task) {
+            this.url = url;
+            this.task = task;
         }
-        call.resolve(jsObject);
+
+        public DownloadTask getTask() {
+            return task;
+        }
+
+        public String getUrl() {
+            return url;
+        }
     }
 
-    @PluginMethod()
-    public void getStatus(PluginCall call) {
-        String id = call.getString("id");
-        DownloadData data = downloadsData.get(id);
-        JSObject jsObject = new JSObject();
-        if (data != null) {
-            jsObject.put("value", data.getStatus());
+    class DownloadTask extends AsyncTask<String, Integer, String> {
+
+        private Context context;
+        private PowerManager.WakeLock mWakeLock;
+        private PluginCall call;
+        private String path;
+
+        public DownloadTask(Context context, String path) {
+            this.context = context;
+            this.path = path;
         }
-        call.resolve(jsObject);
+
+        public void setCall(PluginCall call) {
+            this.call = call;
+        }
+
+        @Override
+        protected String doInBackground(String... sUrl) {
+            InputStream input = null;
+            OutputStream output = null;
+            HttpURLConnection connection = null;
+            long startTime = System.nanoTime();
+            try {
+                URL url = new URL(sUrl[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+
+                // expect HTTP 200 OK, so we don't mistakenly save error report
+                // instead of the file
+                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    return "Server returned HTTP " + connection.getResponseCode()
+                            + " " + connection.getResponseMessage();
+                }
+
+                // this will be useful to display download percentage
+                // might be -1: server did not report the length
+                int totalByteCount = connection.getContentLength();
+
+                // download the file
+                input = connection.getInputStream();
+                File file = new File(this.context.getExternalFilesDir(""), path);
+                file.getParentFile().mkdirs(); // Will create parent directories if not exists
+                file.createNewFile();
+
+                output = new FileOutputStream(file, false);
+
+                byte data[] = new byte[4096];
+                long downloadedByteCount = 0;
+                int count;
+                int speed;
+                int minTime = 1000;
+                long lastRefreshTime = 0;
+                long currentTime = 0;
+                int downloadedPercent;
+                long intervalTimeInMilis;
+                long bytesOfChunk = totalByteCount / 1000;
+                int indexOfBytesOfChunk = 0;
+                while ((count = input.read(data)) != -1) {
+                    if (isCancelled() || totalByteCount <= 0) {
+                        input.close();
+                        return null;
+                    }
+
+                    downloadedByteCount += count;
+                    currentTime = System.nanoTime();
+                    if (downloadedByteCount >= bytesOfChunk * indexOfBytesOfChunk) {
+                        intervalTimeInMilis = currentTime - lastRefreshTime;
+                        if (intervalTimeInMilis == 0) {
+                            intervalTimeInMilis += 1;
+                        }
+
+                        speed = (int) (downloadedByteCount / (intervalTimeInMilis * 1000));
+                        downloadedPercent = (int) (downloadedByteCount * 100 / totalByteCount);
+                        publishProgress(downloadedPercent, (int) speed, (int) downloadedByteCount, totalByteCount);
+                        lastRefreshTime = currentTime;
+                        indexOfBytesOfChunk += 1;
+                    }
+                    output.write(data, 0, count);
+                }
+                return file.getAbsolutePath();
+            } catch (Exception e) {
+                return e.toString();
+            } finally {
+                try {
+                    if (output != null)
+                        output.close();
+                    if (input != null)
+                        input.close();
+                } catch (IOException ignored) {
+                }
+                if (connection != null)
+                    connection.disconnect();
+            }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // take CPU lock to prevent CPU from going off if the user
+            // presses the power button during download
+            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                    getClass().getName());
+            mWakeLock.acquire();
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... progress) {
+            JSObject object = new JSObject();
+            object.put("value", progress[0]);
+            object.put("speed", progress[1]);
+            object.put("currentSize", progress[2]);
+            object.put("totalSize", progress[3]);
+            notifyListeners("progressUpdate", object);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            mWakeLock.release();
+            JSObject object = new JSObject();
+            object.put("path", result);
+            call.resolve(object);
+        }
     }
 }

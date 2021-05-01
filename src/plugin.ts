@@ -7,11 +7,16 @@ import {
   TimeOutOptions,
   CreateDownloadResponse,
   ProgressEventData,
-  StatusCode,
 } from './definitions';
-import { Plugins } from '@capacitor/core';
+import { PluginListenerHandle, Plugins } from '@capacitor/core';
 const { DownloaderPlugin } = Plugins;
 export class Downloader implements IDownloader {
+  addListener(
+    event: 'progressUpdate',
+    callback: (event: ProgressEventData) => void
+  ): PluginListenerHandle {
+    return DownloaderPlugin.addListener(event, callback);
+  }
   initialize() {
     DownloaderPlugin.initialize();
   }
@@ -32,30 +37,8 @@ export class Downloader implements IDownloader {
     return DownloaderPlugin.cancel(options);
   }
 
-  start(
-    options: Options,
-    progress?: (event: ProgressEventData) => void
-  ): Promise<DownloadEventData> {
-    return new Promise(async (resolve, reject) => {
-      DownloaderPlugin.start(
-        options,
-        (data: ProgressEventData | DownloadEventData, error: string) => {
-          if (!error) {
-            const dataParsedType = data as DownloadEventData;
-            if (dataParsedType.status != null) {
-              resolve(dataParsedType);
-            } else {
-              if (progress) progress(data as ProgressEventData);
-            }
-          } else {
-            reject({
-              status: StatusCode.ERROR,
-              message: error,
-            });
-          }
-        }
-      );
-    });
+  start(options: Options): Promise<DownloadEventData> {
+    return DownloaderPlugin.start(options);
   }
   pause(options: Options): Promise<void> {
     return DownloaderPlugin.pause(options);
