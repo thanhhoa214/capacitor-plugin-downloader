@@ -1,4 +1,6 @@
 # Capacitor Downloader
+The plugin enables weight file download. With the limitation of WebView, lost connection over long-time tasks, I find out 2 packages, one adapts high-performance downloadability, while the other satisfies great concurrency mechanism and API design structure but is no longer maintained. I decided to combine both in order to fit my feature demand.
+
 ## 🔥 IMPORTANT: This plugin clone 100% based on [Capacitor Downloader](https://www.npmjs.com/package/capacitor-downloader).
 > The author made a awesome plugin but the reason is he doesn't maintain this great plugin. I decide to clone this for personal purposes. 
 
