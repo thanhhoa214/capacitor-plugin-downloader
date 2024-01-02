@@ -10,7 +10,7 @@
     "watch": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
-  "author": "Osei Fortune",
+  "author": "Hoa Nguyen",
   "license": "MIT",
   "dependencies": {
     "@capacitor/android": "^2.4.7",
@@ -45,5 +45,8 @@
   },
   "bugs": {
     "url": "/issues"
-  }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
 }
